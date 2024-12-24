@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Infrastructure\Context\" />
     <Folder Include="Middleware\" />
     <Folder Include="Service\" />
   </ItemGroup>
