@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
+using System.Text;
 using UserAuthentication.Domain.Contracts;
 using UserAuthentication.Domain.Entities;
 
@@ -28,9 +30,16 @@ namespace UserAuthentication.Service
             throw new NotImplementedException();
         }
 
-        public Task<UserResponse> GetByIdAsync(Guid id)
+        public async Task<UserResponse> GetByIdAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var user=await _userManager.FindByIdAsync(id.ToString());
+            if(user is null)
+            {
+                _logger.LogError("User not found.");
+                throw new Exception("User not found.");
+            }
+            _logger.LogInformation("User found.");
+            return _mapper.Map<UserResponse>(user);
         }
 
         public Task<CurrentUserResponse> GetCurrentUserAsync()
@@ -43,9 +52,41 @@ namespace UserAuthentication.Service
             throw new NotImplementedException();
         }
 
-        public Task<UserResponse> LoginAsync(UserLoginRequest loginRequest)
+        public async Task<UserResponse> LoginAsync(UserLoginRequest loginRequest)
         {
-            throw new NotImplementedException();
+            if(loginRequest is null) throw new ArgumentNullException(nameof(loginRequest)); 
+
+            var user=await _userManager.FindByEmailAsync(loginRequest.Email);
+            if (user is null || await _userManager.CheckPasswordAsync(user,loginRequest.Password)) 
+            {
+                _logger.LogError("Invalid email or password");
+                throw new Exception("Email and/or password is incorrect.");
+            }
+             var accessToken=await _tokenService.GenerateToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+
+            //Hash refreshToken  and store in the db or override the existing refresh token
+
+            using var sha256 = SHA256.Create();
+            var refreshTokenHash=sha256.ComputeHash(Encoding.UTF8.GetBytes(refreshToken));
+            user.RefreshToken=Convert.ToBase64String(refreshTokenHash);
+            user.RefreshTokenExpiryDate = DateTime.Now.AddDays(2);
+
+            //update the user info in the db
+            var result= await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                var errs = string.Join(", ", result.Errors.Select(x => x.Description));
+                _logger.LogError($"Failed to Update User: {errs}");
+                throw new Exception($"User update failed {errs}");
+            }
+            _logger.LogInformation("User logged in successfully");
+
+            var userResponse= _mapper.Map<ApplicationUser,UserResponse>(user);
+            userResponse.RefreshToken=refreshToken;
+            userResponse.AccessToken = accessToken;
+            return userResponse;
+
         }
 
         public Task<CurrentUserResponse> RefreshTokenAsync(RefreshTokenRequest refreshTokenRequest)
