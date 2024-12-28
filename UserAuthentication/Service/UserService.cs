@@ -86,6 +86,7 @@ namespace UserAuthentication.Service
             }
              var accessToken=await _tokenService.GenerateToken(user);
             var refreshToken = _tokenService.GenerateRefreshToken();
+            
 
             //Hash refreshToken  and store in the db or override the existing refresh token
 
@@ -201,6 +202,7 @@ namespace UserAuthentication.Service
                 
             //Generate a unique userName
             newUser.UserName=GetUniqueUserName(request.FirstName,request.LastName);
+            newUser.CreatedOn = DateTime.Now;
             var result=await _userManager.CreateAsync(newUser,request.Password);
             if (!result.Succeeded)
             {
@@ -224,6 +226,7 @@ namespace UserAuthentication.Service
                 throw new Exception("User not found");
             }
             _mapper.Map(request,user);
+            user.LastUpdatedOn = DateTime.Now;
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
             {

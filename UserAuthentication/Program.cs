@@ -1,7 +1,11 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
+using UserAuthentication.Domain.Entities;
+using UserAuthentication.Extension;
 using UserAuthentication.Infrastructure.Context;
+using UserAuthentication.Infrastructure.Mappings;
 using UserAuthentication.Middleware;
 using UserAuthentication.Service;
 
@@ -56,13 +60,22 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
+
+
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddTransient<ICurrentUserService, CurrentUserService>();
+builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
+
+builder.Services.ConfigureIdentity();
+builder.Services.ConfigureJwt(builder.Configuration);
+builder.Services.ConfigureCors();
+
 
 
 var app = builder.Build();
 
+app.UseCors("CorsPolicy");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -71,7 +84,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseExceptionHandler();
 app.UseAuthorization();
 
 app.MapControllers();

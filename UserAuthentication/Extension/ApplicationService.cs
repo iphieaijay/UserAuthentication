@@ -40,7 +40,8 @@ namespace UserAuthentication.Extension
         public static void ConfigureJwt(this IServiceCollection services, IConfiguration config)
         {
             var jwtSetting = config.GetSection("JwtSetting:").Get<JwtSettings>();
-            if (jwtSetting is null || string.IsNullOrEmpty(jwtSetting.Key))
+            var key = jwtSetting is not null ? jwtSetting.Key : null;
+            if (jwtSetting is null || string.IsNullOrEmpty(key))
             {
                 throw new InvalidOperationException("Jwt secret key is not configured.");
             }
