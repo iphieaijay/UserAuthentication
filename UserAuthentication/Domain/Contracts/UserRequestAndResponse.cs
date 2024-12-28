@@ -51,7 +51,7 @@
         public DateTime? LastUpdatedOn { get; set; }
 
     }
-    public class RevokeRefreshTokenRequest
+    public class RevokeRefreshTokenResponse
     {
         public string Token { get; set; }
     }
