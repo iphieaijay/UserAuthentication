@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using UserAuthentication.Domain.Contracts;
 using UserAuthentication.Domain.Entities;
 
@@ -6,11 +7,22 @@ namespace UserAuthentication.Service
 {
     public class UserService : IUserService
     {
-        public readonly ITokenService tokenService;
-        public readonly UserManager<ApplicationUser> _userManager;
+        private readonly ITokenService _tokenService;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<UserService> _logger;
+        private readonly IMapper _mapper;
+        private readonly ICurrentUserService _currentUserService;
 
-        public UserService(ILogger<UserService> logger,UserManager<ApplicationUser> userManager) { }    
+        public UserService(ILogger<UserService> logger,UserManager<ApplicationUser> userManager,
+            IMapper mapper, ITokenService tokenService, ICurrentUserService currentUserService) 
+        {
+            _logger = logger;
+            _mapper = mapper;
+            _userManager = userManager;
+            _tokenService = tokenService;
+            _currentUserService = currentUserService;   
+
+        }    
         public Task DeleteAsync(Guid id)
         {
             throw new NotImplementedException();
@@ -43,7 +55,7 @@ namespace UserAuthentication.Service
 
         public Task<UserResponse> RegisterAsync(UserRegisterRequest request)
         {
-            throw new NotImplementedException();
+           
         }
 
         public Task<RevokeRefreshTokenResponse> RevokeRefreshToken(RefreshTokenRequest refreshTokenRequest)
