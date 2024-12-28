@@ -42,14 +42,28 @@ namespace UserAuthentication.Service
             return _mapper.Map<UserResponse>(user);
         }
 
-        public Task<CurrentUserResponse> GetCurrentUserAsync()
+        public async Task<CurrentUserResponse> GetCurrentUserAsync()
         {
-            throw new NotImplementedException();
+            var user= await _userManager.FindByIdAsync(_currentUserService.GetUserId());
+            if(user is null)
+            {
+                _logger.LogError("User not found.");
+                throw new Exception("User not found.");
+            }
+            return _mapper.Map<CurrentUserResponse>(user);
         }
 
-        public Task<UserResponse> GetUserByEmailAsync(string email)
+        public async Task<UserResponse> GetUserByEmailAsync(string email)
         {
-            throw new NotImplementedException();
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user is null)
+            {
+                _logger.LogError("User not found.");
+                throw new Exception("User not found.");
+            }
+            _logger.LogInformation("User found.");
+            return _mapper.Map<UserResponse>(user);
+
         }
 
         public async Task<UserResponse> LoginAsync(UserLoginRequest loginRequest)
