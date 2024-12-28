@@ -65,8 +65,17 @@ namespace UserAuthentication.Service
             var newUser = _mapper.Map<ApplicationUser>(request);
                 
             //Generate a unique userName
-
-
+            newUser.UserName=GetUniqueUserName(request.FirstName,request.LastName);
+            var result=await _userManager.CreateAsync(newUser,request.Password);
+            if (!result.Succeeded)
+            {
+                var errs = string.Join(", ", result.Errors.Select(x => x.Description));
+                _logger.LogError($"New User creation failed: {errs}");
+                throw new Exception("New User creation failed");
+            }
+            _logger.LogInformation("User created successfully");
+            await _tokenService.GenerateToken(newUser);
+            return _mapper.Map<UserResponse>(newUser);
         }
 
         public Task<RevokeRefreshTokenResponse> RevokeRefreshToken(RefreshTokenRequest refreshTokenRequest)
@@ -80,8 +89,15 @@ namespace UserAuthentication.Service
         }
         private string GetUniqueUserName(string firstName, string lastName)
         {
-            var userName = $"{firstName} {lastName}".ToLower();
-            
+            var uniqueUserName = $"{firstName} {lastName}".ToLower();
+            var userName = uniqueUserName;
+            var count = 1;
+            while(_userManager.Users.Any(u=>u.UserName== userName))
+            {
+                userName = $"{uniqueUserName} {count}";
+                count++;
+            }
+            return userName;
         }
     }
 }
