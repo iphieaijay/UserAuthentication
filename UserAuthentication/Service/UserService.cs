@@ -53,9 +53,20 @@ namespace UserAuthentication.Service
             throw new NotImplementedException();
         }
 
-        public Task<UserResponse> RegisterAsync(UserRegisterRequest request)
+        public async Task<UserResponse> RegisterAsync(UserRegisterRequest request)
         {
-           
+            _logger.LogInformation("Registering new User");
+            var userExists=await _userManager.FindByEmailAsync(request.Email);
+            if (userExists is not null)
+            {
+                _logger.LogError("Email already exists");
+                throw new Exception("Email already exist.");
+            }
+            var newUser = _mapper.Map<ApplicationUser>(request);
+                
+            //Generate a unique userName
+
+
         }
 
         public Task<RevokeRefreshTokenResponse> RevokeRefreshToken(RefreshTokenRequest refreshTokenRequest)
@@ -66,6 +77,11 @@ namespace UserAuthentication.Service
         public Task<UserResponse> UpdateAsync(Guid id, UpdateUserRequest request)
         {
             throw new NotImplementedException();
+        }
+        private string GetUniqueUserName(string firstName, string lastName)
+        {
+            var userName = $"{firstName} {lastName}".ToLower();
+            
         }
     }
 }
