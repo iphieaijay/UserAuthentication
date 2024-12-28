@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
 using UserAuthentication.Domain.Contracts;
@@ -25,9 +26,16 @@ namespace UserAuthentication.Service
             _currentUserService = currentUserService;   
 
         }    
-        public Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(Guid id)
         {
-            throw new NotImplementedException();
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            if (user is null)
+            {
+                _logger.LogError("User not found");
+                throw new Exception("User not found");
+            }
+            await _userManager.DeleteAsync(user);
+            _logger.LogInformation("User account deleted successfully.");
         }
 
         public async Task<UserResponse> GetByIdAsync(Guid id)
@@ -103,11 +111,83 @@ namespace UserAuthentication.Service
 
         }
 
-        public Task<CurrentUserResponse> RefreshTokenAsync(RefreshTokenRequest refreshTokenRequest)
+        public async Task<CurrentUserResponse> RefreshTokenAsync(RefreshTokenRequest refreshTokenRequest)
         {
-            throw new NotImplementedException();
-        }
+            _logger.LogInformation("..Refresh Token for an active User");
+            using var sha256= SHA256.Create();
+            var refreshTokenHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(refreshTokenRequest.RefreshToken));
+            var hashedRefreshToken = Convert.ToBase64String(refreshTokenHash);
 
+            var user= await _userManager.Users.FirstOrDefaultAsync(u=>u.RefreshToken==hashedRefreshToken);
+            if (user is null)
+            {
+                _logger.LogError("Invalid refresh token");
+                throw new Exception("Invalid refresh token.");
+            }
+            if(user.RefreshTokenExpiryDate < DateTime.Now)
+            {
+                _logger.LogWarning($"Refresh Token expired for userId: {user.Id}");
+                throw new Exception("Refresh token expired");
+            }
+
+            var newAccessToken = await _tokenService.GenerateToken(user);
+            _logger.LogInformation("Access token generated successfully.");
+
+            var currentUserponse = _mapper.Map<CurrentUserResponse>(user);
+            currentUserponse.AccessToken = newAccessToken;
+            return currentUserponse;
+
+        }
+        public async Task<RevokeRefreshTokenResponse> RevokeRefreshToken(RefreshTokenRequest refreshTokenRequest)
+        {
+            string userId = string.Empty;
+            _logger.LogInformation("..Revoking Token..");
+            try
+            {
+                using var sha256 = SHA256.Create();
+                var refreshTokenHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(refreshTokenRequest.RefreshToken));
+                var hashedRefreshToken = Convert.ToBase64String(refreshTokenHash);
+
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == hashedRefreshToken);
+                if (user is null)
+                {
+                    _logger.LogError("Invalid refresh token");
+                    throw new Exception("Invalid refresh token.");
+                }
+                userId = user.Id;
+                if (user.RefreshTokenExpiryDate < DateTime.Now)
+                {
+                    _logger.LogWarning($"Refresh Token expired for userId: {user.Id}");
+                    throw new Exception("Refresh token expired");
+                }
+                user.RefreshToken = null;
+                user.RefreshTokenExpiryDate = null;
+
+                var updateResult = await _userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    var errs = string.Join(", ", updateResult.Errors.Select(x => x.Description));
+                    _logger.LogError($"Failed to update user: {errs}");
+                    return new RevokeRefreshTokenResponse
+                    {
+                        Message = "Failed to revoke refresh token"
+                    };
+                }
+                _logger.LogInformation("Token revoked successfully");
+                return new RevokeRefreshTokenResponse
+                {
+                    Message = "Refresh Token revoked successfully"
+                };
+            }
+            catch (Exception ex)
+            {
+
+                _logger.LogWarning($"failed to revoke token for user with Id: {userId}");
+                throw new Exception("Failed to revoke token");
+
+            }
+
+        }
         public async Task<UserResponse> RegisterAsync(UserRegisterRequest request)
         {
             _logger.LogInformation("Registering new User");
@@ -133,14 +213,25 @@ namespace UserAuthentication.Service
             return _mapper.Map<UserResponse>(newUser);
         }
 
-        public Task<RevokeRefreshTokenResponse> RevokeRefreshToken(RefreshTokenRequest refreshTokenRequest)
-        {
-            throw new NotImplementedException();
-        }
+        
 
-        public Task<UserResponse> UpdateAsync(Guid id, UpdateUserRequest request)
+        public async Task<UserResponse> UpdateAsync(Guid id, UpdateUserRequest request)
         {
-            throw new NotImplementedException();
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            if(user is null)
+            {
+                _logger.LogError("User not found");
+                throw new Exception("User not found");
+            }
+            _mapper.Map(request,user);
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                _logger.LogError("User update failed");
+                throw new Exception("User update failed.");
+            }
+            _logger.LogInformation("Update successful.");
+            return _mapper.Map<UserResponse>(user);
         }
         private string GetUniqueUserName(string firstName, string lastName)
         {
