@@ -1,7 +1,10 @@
-﻿namespace UserAuthentication.Service
+﻿using UserAuthentication.Domain.Entities;
+
+namespace UserAuthentication.Service
 {
     public interface ITokenService
     {
-        public string GenerateToken();
+        public Task<string> GenerateToken(ApplicationUser user);
+        string GenerateRefreshToken();
     }
 }
