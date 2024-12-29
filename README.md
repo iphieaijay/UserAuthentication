@@ -32,57 +32,52 @@ Repositories: Responsible for database operations using EF Core.
 Models: Define the data structures for the application.
 Middleware: Manage custom authentication and error handling logic.
 <h3>Endpoints</h3>
-HTTP Method	Endpoint	Description
-POST	/api/auth/register	Registers a new user.
-POST	/api/auth/login	Logs in a user.
-GET	/api/users/{id}	Retrieves a user by ID.
-GET	/api/users/email/{email}	Fetches a user by email.
-POST	/api/auth/revoke-token	Revokes a user's refresh token.
-GET	/api/auth/current-user	Gets the current logged-in user.
-POST	/api/auth/confirm-email	Confirms a user's email.
-POST	/api/auth/reset-password	Resets a user's password.
-Setup and Installation
-Prerequisites
-.NET 8 SDK
-SQL Server
-A tool like Postman for testing API endpoints
-Steps
-Clone the repository:
-bash
-Copy code
+<table><tr><th>HTTP Method</th>	<th>Endpoint</th>	<th>Description</th></tr>
+<tbody><tr><td>POST</td>	<td>/api/auth/register</td><td>	Registers a new user.</td></tr>
+<tr><td>POST</td>	<td>/api/auth/login</td>	<td>Logs in a user.</td></tr>
+<tr><td>GET</td><td>/api/users/{id}</td>	<td>Retrieves a user by ID.</td></tr>
+<tr><td>GET</td>	<td>/api/users/email/{email}</td>	<td>Fetches a user by email.</td></tr>
+<tr><td>POST</td>	<td>/api/auth/revoke-token</td>	<td>Revokes a user's refresh token.</td></tr>
+<tr><td>GET</td><td>	/api/auth/current-user</td><td>	Gets the current logged-in user.</td></tr>
+<tr><td>POST</td><td>	/api/auth/confirm-email</td><td>	Confirms a user's email.</td></tr>
+<tr><td>POST</td>	<td>/api/auth/reset-password</td>	<td>Resets a user's password.</td></tr>
+</tbody>
+</table>
+<h3>Setup and Installation</h3>
+<h4>Prerequisites</h4>
+a..NET 8 SDK
+b. SQL Server
+c. A tool like Postman for testing API endpoints
+<h3>Steps</h3>
+<h4>a. Clone the repository:</h4>
+<h6>Copy code
 git clone https://github.com/YourUsername/UserAuthentication.git
-cd UserAuthentication
-Configure the connection string in appsettings.json:
-json
-Copy code
+cd UserAuthentication</h6>
+<h4>b. Configure the connection string in appsettings.json:</h4>
+Using this code: 
 "ConnectionStrings": {
     "DefaultConnection": "Server=YOUR_SERVER;Database=UserAuthenticationDb;Trusted_Connection=True;"
 }
-Apply migrations:
-bash
-Copy code
+<h4>c. Apply migrations:</h4>
 dotnet ef database update
-Run the application:
-bash
-Copy code
+<h4>d. Run the application:</h4>
+Use this code:
 dotnet run
-Usage
-Use a tool like Postman or Swagger to test the API endpoints.
-For authentication, use the JWT token provided upon login for authorized endpoints.
-Future Enhancements
-Add Two-Factor Authentication (2FA) for enhanced security.
-Implement social login options (e.g., Google, Facebook).
-Add user roles and permission-based authorization.
-Include advanced logging and monitoring.
-Contributing
+<h4>e. Usage</h4>
+Use a tool like Postman or Swagger to test the API endpoints.<br/>
+<h4>**For authentication, use the JWT token provided upon login for authorized endpoints.**</h4>
+<h3>Future Enhancements</h3>
+<h4>a. Add Two-Factor Authentication (2FA) for enhanced security.</h4>
+<h4>b.Implement social login options (e.g., Google, Facebook).</h4>
+<h4>c. Add user roles and permission-based authorization.</h4>
+<h4>d.Include advanced logging and monitoring.</h4>
+<h3>Contributing</h3>
 Contributions are welcome! Feel free to open issues or submit pull requests to enhance the project.
 
-License
+<h3>License</h3>
 This project is licensed under the MIT License.
 
-Contact
+<h3>Contact</h3>
 For inquiries or support, feel free to contact me:
 
-Email: your-email@example.com
-LinkedIn: Your LinkedIn Profile
-GitHub: Your GitHub Profile
+Email: iphieaijay@outlook.com
