@@ -75,13 +75,36 @@ namespace UserAuthentication.Controllers
             }
             return BadRequest(response);
         }
+        [HttpGet("getById")]
+        [Authorize]
+        public async Task<IActionResult> GetUserById(Guid id)
+        {
+            var response = await _userService.GetByIdAsync(id);
+            return Ok(response);
 
+        }
+        [HttpGet("getByEmail")]
+        [Authorize]
+        public async Task<IActionResult> GetUserByEmail(string email)
+        {
+            var response = await _userService.GetUserByEmailAsync(email);
+            return Ok(response);
+
+        }
         [HttpGet("getCurrentUser")]
         [Authorize]
         public async Task<IActionResult> GetCurrentUser()
         {
             var response = await _userService.GetCurrentUserAsync();
             return Ok(response);
+
+        }
+        [HttpGet("DeleteUser")]
+        [Authorize]
+        public async Task<IActionResult> DeleteUser(Guid id)
+        {
+            await _userService.DeleteAsync(id);
+            return Ok("User account deleted successfully.");
 
         }
     }

@@ -34,8 +34,9 @@ namespace UserAuthentication.Service
                 _logger.LogError("User not found");
                 throw new Exception("User not found");
             }
-            await _userManager.DeleteAsync(user);
             _logger.LogInformation("User account deleted successfully.");
+            await _userManager.DeleteAsync(user);
+            
         }
 
         public async Task<UserResponse> GetByIdAsync(Guid id)
@@ -79,7 +80,13 @@ namespace UserAuthentication.Service
             if(loginRequest is null) throw new ArgumentNullException(nameof(loginRequest)); 
 
             var user=await _userManager.FindByEmailAsync(loginRequest.Email);
-            if (user is null || await _userManager.CheckPasswordAsync(user,loginRequest.Password)) 
+            if (user is null)
+            {
+                _logger.LogError("User not found");
+                throw new Exception("User not found");
+            }
+            var res = await _userManager.CheckPasswordAsync(user, loginRequest.Password);            
+            if(res==false) 
             {
                 _logger.LogError("Invalid email or password");
                 throw new Exception("Email and/or password is incorrect.");
@@ -93,8 +100,9 @@ namespace UserAuthentication.Service
             using var sha256 = SHA256.Create();
             var refreshTokenHash=sha256.ComputeHash(Encoding.UTF8.GetBytes(refreshToken));
             user.RefreshToken=Convert.ToBase64String(refreshTokenHash);
+            
             user.RefreshTokenExpiryDate = DateTime.Now.AddDays(2);
-
+            user.LastUpdatedOn = DateTime.Now;
             //update the user info in the db
             var result= await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
@@ -106,8 +114,10 @@ namespace UserAuthentication.Service
             _logger.LogInformation("User logged in successfully");
 
             var userResponse= _mapper.Map<ApplicationUser,UserResponse>(user);
+
             userResponse.RefreshToken=refreshToken;
             userResponse.AccessToken = accessToken;
+            
             return userResponse;
 
         }
@@ -238,12 +248,12 @@ namespace UserAuthentication.Service
         }
         private string GetUniqueUserName(string firstName, string lastName)
         {
-            var uniqueUserName = $"{firstName} {lastName}".ToLower();
+            var uniqueUserName = $"{firstName}{lastName}".ToLower();
             var userName = uniqueUserName;
             var count = 1;
             while(_userManager.Users.Any(u=>u.UserName== userName))
             {
-                userName = $"{uniqueUserName} {count}";
+                userName = $"{uniqueUserName}{count}";
                 count++;
             }
             return userName;

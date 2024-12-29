@@ -39,13 +39,12 @@ namespace UserAuthentication.Extension
 
         public static void ConfigureJwt(this IServiceCollection services, IConfiguration config)
         {
-            var jwtSetting = config.GetSection("JwtSetting:").Get<JwtSettings>();
-            var key = jwtSetting is not null ? jwtSetting.Key : null;
-            if (jwtSetting is null || string.IsNullOrEmpty(key))
+            var key = config["JwtSettings:key"];
+            if (string.IsNullOrEmpty(key))
             {
                 throw new InvalidOperationException("Jwt secret key is not configured.");
             }
-            var secretKey=new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSetting.Key));
+            var secretKey=new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
             services.AddAuthentication(o =>
             {
                 o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -58,8 +57,8 @@ namespace UserAuthentication.Extension
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSetting.Key,
-                    ValidAudience = jwtSetting.ValidAudience,
+                    ValidIssuer = config["JwtSettings:validIssuer"],
+                    ValidAudience = config["JwtSettings:validAudience"],
                     IssuerSigningKey = secretKey
                 };
                 o.Events = new JwtBearerEvents
