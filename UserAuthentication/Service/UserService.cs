@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
@@ -75,21 +77,28 @@ namespace UserAuthentication.Service
 
         }
 
-        public async Task<UserResponse> LoginAsync(UserLoginRequest loginRequest)
+        public async Task<CustomResponse> LoginAsync(UserLoginRequest loginRequest)
         {
             if(loginRequest is null) throw new ArgumentNullException(nameof(loginRequest)); 
 
+            
             var user=await _userManager.FindByEmailAsync(loginRequest.Email);
             if (user is null)
             {
                 _logger.LogError("User not found");
-                throw new Exception("User not found");
+                return new CustomResponse(StatusCodes.Status400BadRequest,"User not found");
+            }
+            var  IsEmailConfirmed= await _userManager.IsEmailConfirmedAsync(user);
+            if (!IsEmailConfirmed)
+            {
+                _logger.LogError("Please confirm your email.");
+                return new CustomResponse(StatusCodes.Status401Unauthorized,"Please confirm your email.");
             }
             var res = await _userManager.CheckPasswordAsync(user, loginRequest.Password);            
             if(res==false) 
             {
                 _logger.LogError("Invalid email or password");
-                throw new Exception("Email and/or password is incorrect.");
+                return new CustomResponse(StatusCodes.Status400BadRequest,"Email and/or password is incorrect.");
             }
              var accessToken=await _tokenService.GenerateToken(user);
             var refreshToken = _tokenService.GenerateRefreshToken();
@@ -109,7 +118,7 @@ namespace UserAuthentication.Service
             {
                 var errs = string.Join(", ", result.Errors.Select(x => x.Description));
                 _logger.LogError($"Failed to Update User: {errs}");
-                throw new Exception($"User update failed {errs}");
+                return new CustomResponse(StatusCodes.Status400BadRequest,$"User update failed", errs);
             }
             _logger.LogInformation("User logged in successfully");
 
@@ -118,7 +127,7 @@ namespace UserAuthentication.Service
             userResponse.RefreshToken=refreshToken;
             userResponse.AccessToken = accessToken;
             
-            return userResponse;
+            return new CustomResponse(StatusCodes.Status200OK,"Login successful", userResponse );
 
         }
 
@@ -199,14 +208,15 @@ namespace UserAuthentication.Service
             }
 
         }
-        public async Task<UserResponse> RegisterAsync(UserRegisterRequest request)
+        public async Task<CustomResponse> RegisterAsync(UserRegisterRequest request)
         {
+            CustomResponse response = null;
             _logger.LogInformation("Registering new User");
             var userExists=await _userManager.FindByEmailAsync(request.Email);
             if (userExists is not null)
             {
                 _logger.LogError("Email already exists");
-                throw new Exception("Email already exist.");
+               response=new CustomResponse(StatusCodes.Status400BadRequest,"Email already exist.");
             }
             var newUser = _mapper.Map<ApplicationUser>(request);
                 
@@ -218,11 +228,28 @@ namespace UserAuthentication.Service
             {
                 var errs = string.Join(", ", result.Errors.Select(x => x.Description));
                 _logger.LogError($"New User creation failed: {errs}");
-                throw new Exception("New User creation failed");
+                response= new CustomResponse(StatusCodes.Status400BadRequest,"New User creation failed");
+            }
+            //Generate confirm email token
+            var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(newUser);
+
+            //Send the token to the registered user's email
+
+            //Save ConfirmationToken to the database
+            newUser.EmailConfirmationToken= confirmationToken;
+            newUser.LastUpdatedOn = DateTime.Now;
+            var updateResult=await _userManager.UpdateAsync(newUser);
+            if (!updateResult.Succeeded)
+            {
+                var errs = string.Join(", ", result.Errors.Select(x => x.Description));
+                _logger.LogError($"New User creation failed: {errs}");
+                response=new CustomResponse(StatusCodes.Status500InternalServerError,"Unable to save email confirmationToken", new {errs});
             }
             _logger.LogInformation("User created successfully");
             await _tokenService.GenerateToken(newUser);
-            return _mapper.Map<UserResponse>(newUser);
+            //newUser.
+            var userResponse=_mapper.Map<UserResponse>(newUser);
+            return new CustomResponse(StatusCodes.Status200OK,"User registration successful.",userResponse);
         }
 
         
@@ -257,6 +284,65 @@ namespace UserAuthentication.Service
                 count++;
             }
             return userName;
+        }
+
+        public async Task<CustomResponse> ConfirmEmail(string email, string code)
+        {
+            CustomResponse response = null;
+            if(email is null || code is null)
+            {
+                _logger.LogError("Email and code are required");
+                response=new CustomResponse(StatusCodes.Status400BadRequest,"Invalid email confirmation details.",null);
+            }
+            var user= await _userManager.FindByEmailAsync(email);
+            if (user is null)
+            {
+                response= new CustomResponse(StatusCodes.Status404NotFound, "User not found", null);
+            }
+            var emailVerified=await _userManager.ConfirmEmailAsync(user, code);
+            if (emailVerified.Succeeded)
+            {
+                response= new CustomResponse ( StatusCodes.Status200OK, "Email verified successfully", null );
+            }
+            return response;
+        }
+
+        public async Task<CustomResponse> ForgotPasswordAsync(string email)
+        {
+            var user= await _userManager.FindByEmailAsync(email);
+            if (user is null)
+            {
+                return new CustomResponse(StatusCodes.Status400BadRequest, "Invalid Email", null);
+            }
+
+            var passwordResetToken= await _userManager.GeneratePasswordResetTokenAsync(user);
+            if (string.IsNullOrEmpty(passwordResetToken))
+            {
+                return new CustomResponse(StatusCodes.Status400BadRequest, "An error occurred.", null);
+            }
+            var callbackUrl = $"https://localhost:7110/api/userauth/forgot-password?code={passwordResetToken}&email={user.Email}";
+
+            //Send email
+
+            return new CustomResponse(StatusCodes.Status200OK, "Click on the link in the email sent to you to reset your password.", new { token = passwordResetToken, email = user.Email });
+        }
+
+        public Task<CustomResponse> ResetPasswordAsync(ResetPasswordRequest req)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<CustomResponse> EmailVerificationAsync(VerifyEmailRequest request)
+        {
+            var user=await _userManager.FindByEmailAsync(request.email);
+            if (user is null)
+            {
+                return new CustomResponse(StatusCodes.Status400BadRequest, "User not found.");
+            }
+            var isVerified = await _userManager.ConfirmEmailAsync(user, request.verifyEmailtoken);
+            if (isVerified.Succeeded)
+                return new CustomResponse(StatusCodes.Status200OK, "Email verified successfully.");
+            return new CustomResponse(StatusCodes.Status400BadRequest, "Invalied verification Token");
         }
     }
 }

@@ -9,6 +9,7 @@ namespace UserAuthentication.Domain.Entities
         public string Gender { get; set; }
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryDate { get; set; }
+        public string? EmailConfirmationToken { get; set; }
         public DateTime CreatedOn { get; set; }
         public DateTime? LastUpdatedOn { get; set; }
     }

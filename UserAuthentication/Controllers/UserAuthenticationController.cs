@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using UserAuthentication.Domain.Contracts;
 using UserAuthentication.Service;
@@ -75,6 +76,46 @@ namespace UserAuthentication.Controllers
             }
             return BadRequest(response);
         }
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest req)
+        {
+            if (string.IsNullOrEmpty(req.Email))
+            {
+                return BadRequest("Email address is required.");
+            }
+            var result=await _userService.ForgotPasswordAsync(req.Email);
+            if(result.responseCode==StatusCodes.Status200OK) 
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpPost("verify-email")]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
+        {
+            if (ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var result = await _userService.EmailVerificationAsync(request);
+            if (result.responseCode == StatusCodes.Status200OK)
+                return Ok(result);
+            return BadRequest(result);
+        }
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var result = await _userService.ResetPasswordAsync(request);
+            if (result.responseCode == StatusCodes.Status200OK)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
         [HttpGet("getById")]
         [Authorize]
         public async Task<IActionResult> GetUserById(Guid id)
@@ -99,7 +140,7 @@ namespace UserAuthentication.Controllers
             return Ok(response);
 
         }
-        [HttpGet("DeleteUser")]
+        [HttpDelete("DeleteUser")]
         [Authorize]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
@@ -107,5 +148,23 @@ namespace UserAuthentication.Controllers
             return Ok("User account deleted successfully.");
 
         }
+        [HttpPost("confirm-email")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmEmail(string email, string token)
+        {
+            var result=await _userService.ConfirmEmail(email, token);
+            if (result.responseCode == StatusCodes.Status200OK)
+            {
+                return Ok(result);
+            }
+            else if (result.responseCode == StatusCodes.Status404NotFound)
+            {
+                return NotFound(result);
+            }
+            else 
+                return BadRequest(result);
+
+        }
+
     }
 }

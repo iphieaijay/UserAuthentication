@@ -33,6 +33,16 @@ namespace UserAuthentication.Extension
                 o.Password.RequireLowercase = true;
                 o.Password.RequireUppercase = true;
                 o.Password.RequiredLength = 8;
+
+                o.SignIn.RequireConfirmedAccount = false;
+                o.SignIn.RequireConfirmedEmail = false;
+
+                o.Lockout.AllowedForNewUsers = true;
+                o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+                o.Lockout.MaxFailedAccessAttempts = 5;
+
+                //Email Confirmation Token
+                o.Tokens.EmailConfirmationTokenProvider=TokenOptions.DefaultProvider;
             }).AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
         }

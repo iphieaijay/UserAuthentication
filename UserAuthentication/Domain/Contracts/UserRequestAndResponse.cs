@@ -26,6 +26,7 @@
         public DateTime? LastUpdatedOn { get; set; }
         public string? AccessToken { get; set; }
         public string? RefreshToken { get; set; }
+        public string? ConfirmationToken { get; set; }
 
     }
     public class CurrentUserResponse
@@ -60,4 +61,5 @@
         public string RefreshToken { get; set; }
     }
 
+    public record VerifyEmailRequest(string email, string verifyEmailtoken);
 }

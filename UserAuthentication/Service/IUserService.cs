@@ -1,10 +1,11 @@
-﻿using UserAuthentication.Domain.Contracts;
+﻿using Microsoft.AspNetCore.Identity.Data;
+using UserAuthentication.Domain.Contracts;
 
 namespace UserAuthentication.Service
 {
     public interface IUserService
     {
-        Task<UserResponse> RegisterAsync(UserRegisterRequest request);
+        Task<CustomResponse> RegisterAsync(UserRegisterRequest request);
         Task<CurrentUserResponse> GetCurrentUserAsync();
         Task<UserResponse> GetUserByEmailAsync(string email);
         Task<UserResponse> GetByIdAsync(Guid id);
@@ -12,6 +13,10 @@ namespace UserAuthentication.Service
         Task DeleteAsync(Guid id);
         Task<RevokeRefreshTokenResponse> RevokeRefreshToken(RefreshTokenRequest refreshTokenRequest);
         Task<CurrentUserResponse> RefreshTokenAsync(RefreshTokenRequest refreshTokenRequest);
-        Task<UserResponse> LoginAsync(UserLoginRequest loginRequest);
+        Task<CustomResponse> LoginAsync(UserLoginRequest loginRequest);
+        Task<CustomResponse> ConfirmEmail(string email, string code);
+        Task<CustomResponse> ForgotPasswordAsync(string email);
+        Task<CustomResponse> EmailVerificationAsync(VerifyEmailRequest request);
+        Task<CustomResponse> ResetPasswordAsync(ResetPasswordRequest req);
     }
 }
