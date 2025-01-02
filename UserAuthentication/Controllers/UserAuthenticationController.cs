@@ -102,7 +102,8 @@ namespace UserAuthentication.Controllers
                 return Ok(result);
             return BadRequest(result);
         }
-        [HttpPost("reset-password")]
+        [Route(("reset-password"))]
+        [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {

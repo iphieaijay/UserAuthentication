@@ -327,9 +327,22 @@ namespace UserAuthentication.Service
             return new CustomResponse(StatusCodes.Status200OK, "Click on the link in the email sent to you to reset your password.", new { token = passwordResetToken, email = user.Email });
         }
 
-        public Task<CustomResponse> ResetPasswordAsync(ResetPasswordRequest req)
+        public async Task<CustomResponse> ResetPasswordAsync(ResetPasswordRequest req)
         {
-            throw new NotImplementedException();
+            var user=await _userManager.FindByEmailAsync(req.Email);
+            if (user is null)
+            {
+                return new CustomResponse(StatusCodes.Status400BadRequest, "User not found.");
+            }
+            var result=await _userManager.ResetPasswordAsync(user, req.ResetCode, req.NewPassword);
+            if (result.Succeeded)
+            {
+                return new CustomResponse(StatusCodes.Status200OK, "Password reset successful");
+            }
+            else
+            {
+                return new CustomResponse(StatusCodes.Status500InternalServerError,"Password reset failed.");
+            }
         }
 
         public async Task<CustomResponse> EmailVerificationAsync(VerifyEmailRequest request)
