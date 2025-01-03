@@ -26,11 +26,11 @@ SQL Server: As the database provider for reliable data storage.
 <h3>Project Structure</h3>
 The project follows a clean architecture for scalability and maintainability:
 
-Controllers: Handle HTTP requests and define API endpoints.
-Services: Contain business logic for user management and authentication.
-Repositories: Responsible for database operations using EF Core.
-Models: Define the data structures for the application.
-Middleware: Manage custom authentication and error handling logic.
+a. Controllers: Handle HTTP requests and define API endpoints.<br/>
+b. Services: Contain business logic for user management and authentication.<br/>
+c. Repositories: Responsible for database operations using EF Core.<br/>
+d. Models: Define the data structures for the application.<br/>
+e. Middleware: Manage custom authentication and error handling logic.<br/>
 <h3>Endpoints</h3>
 <table><tr><th>HTTP Method</th>	<th>Endpoint</th>	<th>Description</th></tr>
 <tbody><tr><td>POST</td>	<td>/api/auth/register</td><td>	Registers a new user.</td></tr>
