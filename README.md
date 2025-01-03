@@ -18,11 +18,11 @@ The API includes the following features:
 <h4>b. Confirm Email:</h4> Verifies a user's email address for added security.
 <h4>c. Reset Password:</h4> Enables users to reset their passwords securely.
 <h3>Technologies Used</h3>
-.NET 8: The latest version of Microsoft's powerful framework for building scalable APIs.
-Entity Framework Core: For database interactions and migrations.
-ASP.NET Core Identity: For user management and authentication.
-JWT (JSON Web Tokens): For secure and stateless authentication.
-SQL Server: As the database provider for reliable data storage.
+a. .NET 8: The latest version of Microsoft's powerful framework for building scalable APIs.<br/>
+b. Entity Framework Core: For database interactions and migrations.<br/>
+c. ASP.NET Core Identity: For user management and authentication.<br/>
+d. JWT (JSON Web Tokens): For secure and stateless authentication.<br/>
+e. SQL Server: As the database provider for reliable data storage.<br/>
 <h3>Project Structure</h3>
 The project follows a clean architecture for scalability and maintainability:
 
